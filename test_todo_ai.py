@@ -1,5 +1,4 @@
 from playwright.sync_api import Page, expect
-from pytest_playwright.pytest_playwright import page
 
 from todo_helpers import (
     add_todos,
