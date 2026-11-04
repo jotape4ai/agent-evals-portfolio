@@ -17,6 +17,7 @@ each test catches its target bug.
 
 ## Changes I made
 
+- Full diff vs. the original AI output: https://github.com/jotape4ai/agent-evals-portfolio/commit/f3db066
 - Extracted `todo_helpers.py` with `open_todo_app`, `add_todos`,
   `get_todo_item`, `toggle_todo`, `edit_todo`, `clear_completed_todos`, and
   `filter_todos`.
@@ -31,13 +32,11 @@ each test catches its target bug.
 | Test | Mutation (behavior change) | Caught by | Output |
 |---|---|---|---|
 | Edit | Press `Escape` instead of `Enter` to cancel the edit | Visibility check for "Buy groceries and coffee" | Fails: edited todo is not found |
-| Clear completed | The recorded check inverted the retained-todo visibility assertion; this is an assertion mutation, not an app behavior mutation | Visibility check for "Plan weekend" | Fails: expected not visible, but the todo is visible |
+| Clear completed | Comment out Clear Completed action | `to_have_count(1)` | Fails: expected to count 1, but counts 2 |
 | Active filter | Remove the toggle so "Water plants" remains active | `not_to_be_visible` check for "Water plants" | Fails: expected not visible, but the todo is visible |
 
 ## Remaining risks
 
 - All tests depend on the external demo site; a slow or unavailable site can
   cause failures unrelated to the tests.
-- The test suite was reported to pass both individually and together in a
-  different order, but it does not isolate the tests from external-site
-  availability.
+- I ran the tests individually and in different orders; all pass.
