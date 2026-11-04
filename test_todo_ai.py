@@ -1,51 +1,57 @@
 from playwright.sync_api import Page, expect
+from pytest_playwright.pytest_playwright import page
+
+from todo_helpers import (
+    add_todos,
+    clear_completed_todos,
+    edit_todo,
+    filter_todos,
+    get_todo_item,
+    open_todo_app,
+    toggle_todo,
+)
 
 
 def test_editing_existing_todo_saves_updated_text(page: Page) -> None:
-    page.goto("https://demo.playwright.dev/todomvc/#/")
-    new_todo = page.get_by_role("textbox", name="What needs to be done?")
-    new_todo.fill("Buy groceries")
-    new_todo.press("Enter")
-
-    todo_item = page.get_by_test_id("todo-item").filter(has_text="Buy groceries")
-    todo_item.get_by_text("Buy groceries").dblclick()
-    edit_input = todo_item.locator("input.edit")
-    expect(edit_input).to_be_focused()
-    edit_input.fill("Buy groceries and coffee")
-    edit_input.press("Enter")
+    open_todo_app(page)
+    add_todos(page, "Buy groceries")
 
     expect(page.get_by_test_id("todo-item")).to_have_count(1)
-    expect(page.get_by_test_id("todo-item").get_by_text("Buy groceries and coffee")).to_be_visible()
-    expect(page.get_by_text("Buy groceries", exact=True)).not_to_be_visible()
+
+    edit_todo(page, "Buy groceries", "Buy groceries and coffee")
+
+    expect(page.get_by_test_id("todo-item")).to_have_count(1)
+    expect(get_todo_item(page, "Buy groceries and coffee")).to_be_visible()
+    expect(page.get_by_test_id("todo-item").get_by_text("Buy groceries", exact=True)).to_have_count(0)
 
 
 def test_clear_completed_removes_only_completed_todos(page: Page) -> None:
-    page.goto("https://demo.playwright.dev/todomvc/#/")
-    new_todo = page.get_by_role("textbox", name="What needs to be done?")
-    new_todo.fill("Submit report")
-    new_todo.press("Enter")
-    new_todo.fill("Plan weekend")
-    new_todo.press("Enter")
+    open_todo_app(page)
+    add_todos(page, "Submit report", "Plan weekend")
 
-    page.get_by_test_id("todo-item").filter(has_text="Submit report").get_by_label("Toggle Todo").check()
-    page.get_by_role("button", name="Clear completed").click()
+    expect(page.get_by_test_id("todo-item")).to_have_count(2)
+    expect(get_todo_item(page, "Submit report")).to_be_visible()
+    expect(get_todo_item(page, "Plan weekend")).to_be_visible()
+    toggle_todo(page, "Submit report")
+    clear_completed_todos(page)
 
     expect(page.get_by_test_id("todo-item")).to_have_count(1)
-    expect(page.get_by_test_id("todo-item").get_by_text("Plan weekend")).to_be_visible()
-    expect(page.get_by_text("Submit report", exact=True)).not_to_be_visible()
+    expect(get_todo_item(page, "Plan weekend")).to_be_visible()
+    expect(get_todo_item(page, "Plan weekend").get_by_label("Toggle Todo")).not_to_be_checked()
+    expect(get_todo_item(page, "Submit report")).to_have_count(0)
+    expect(page.get_by_test_id("todo-count")).to_have_text("1 item left")
 
 
 def test_active_filter_shows_only_uncompleted_todos(page: Page) -> None:
-    page.goto("https://demo.playwright.dev/todomvc/#/")
-    new_todo = page.get_by_role("textbox", name="What needs to be done?")
-    new_todo.fill("Water plants")
-    new_todo.press("Enter")
-    new_todo.fill("Reply to email")
-    new_todo.press("Enter")
+    open_todo_app(page)
+    add_todos(page, "Water plants", "Reply to email")
 
-    page.get_by_test_id("todo-item").filter(has_text="Water plants").get_by_label("Toggle Todo").check()
-    page.get_by_role("link", name="Active").click()
+    expect(page.get_by_test_id("todo-item")).to_have_count(2)
+    expect(get_todo_item(page, "Water plants")).to_be_visible()
+    expect(get_todo_item(page, "Reply to email")).to_be_visible()
+    toggle_todo(page, "Water plants")
+    filter_todos(page, "Active")
 
-    expect(page.get_by_test_id("todo-item").filter(has_text="Reply to email")).to_be_visible()
-    expect(page.get_by_test_id("todo-item").filter(has_text="Water plants")).not_to_be_visible()
+    expect(get_todo_item(page, "Reply to email")).to_be_visible()
+    expect(get_todo_item(page, "Water plants")).not_to_be_visible()
     expect(page.get_by_test_id("todo-item").filter(visible=True)).to_have_count(1)
